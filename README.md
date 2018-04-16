@@ -1,6 +1,6 @@
 # ROAM: A Neighborhood Explorer based on t-SNE
 
-Please see the LICENSE.
+Please see the [LICENSE](LICENSE).
 
 ## Overview
 
