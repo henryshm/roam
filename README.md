@@ -1,4 +1,4 @@
-# ROAM: A Neighborhood Explorer using t-SNE
+# ROAM: A Neighborhood Explorer based on t-SNE
 
 Please see the LICENSE.
 
