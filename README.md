@@ -1,6 +1,10 @@
 # ROAM: A Neighborhood Explorer using t-SNE
 
-Please see the LICENSE
+Please see the LICENSE.
+
+## Overview
+
+![ROAM Screenshot](roam-image.png)
 
 ## Getting Started
 
