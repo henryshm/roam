@@ -1,0 +1,9 @@
+*.pyc
+*.pickle
+*.pdf
+__pycache__
+.ipynb_checkpoints
+.pytest_cache
+.cache
+.DS_Store
+*/.DS_Store
