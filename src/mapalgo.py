@@ -13,6 +13,8 @@ and other features.
 """
 
 from collections import namedtuple
+from collections import defaultdict
+from sklearn import decomposition
 import itertools
 import functools
 
@@ -234,24 +236,6 @@ def estimate_sne(P, q_fn, grad_fn, params):
     return Y
 
 
-def estimate_pca(P, q_fn, grad_fn, params):
-    """
-    Estimates a PCA data.
-
-    # Arguments
-        P: Matrix of joint probabilities.
-        q_fn: Function that takes Y and gives Q prob matrix.
-        grad_fn: Function to compute gradient cost, given (P, Q, Y, inv_distances)
-    # Returns:
-        Y: Matrix, low-dimensional representation of X.
-    """
-
-    N, M = P.shape
-    assert N == M, "P must be a square matrix"
-    assert isinstance(params, OptParams), "an OptParams instance is required for params"
-
-
-
 def q_tsne(Y):
     """t-SNE: Given low-dimensional representations Y, compute
     matrix of joint probabilities with entries q_ij."""
@@ -450,12 +434,23 @@ def create_map_from_data(name, data,
     if labels is None:
         labels = np.arange(len(data))
     prob = p_joint(data, target_perplexity=perplexity)
-    return create_map(name, prob,
-        labels=labels,
-        prior=prior,
-        gamma=gamma,
-        params=params,
-    )
+
+    #t-SNE version
+    # return create_map(name, prob,
+    #     labels=labels,
+    #     prior=prior,
+    #     gamma=gamma,
+    #     params=params,
+    # )
+
+    #PCA code
+    print("N = {}".format(len(data)))
+    pca = decomposition.PCA(n_components=26)
+    pca.fit(data)
+    y = pca.transform(data)
+    print(y)
+
+    return Map2D(name, labels, prob, y[:, 1:3], prior, params)
 
 
 def create_blended_map(
@@ -513,27 +508,6 @@ def create_blended_map(
         gamma=gamma,
         params=params,
     )
-
-
-def weights_from_events(events, N=None):
-    """
-    Convert a stream (iterable) of events into a sparse matrix of weights.
-
-    Each event should be a tuple of (i, j, c), representing an event connecting
-    from i to j with strength c.  (Use c=1 for uniformly weighted events.)
-
-    Returns a sparse matrix representing the total weight of all given events.
-    """
-    w = defaultdict(float)
-    for i, j, c in events:
-        w[i,j] += c
-    xrows = [k[0] for k in w.keys()]
-    xcols = [k[1] for k in w.keys()]
-    xvals = list(w.values())
-    if N is None:
-        N = max(np.maximum(xrows), np.maximum(xcols)) + 1
-    mat = csr_matrix((xvals, (xrows, xcols)), shape=(N,N))
-    return mat
 
 
 def weights_to_condprob(weights):

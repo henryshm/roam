@@ -94,8 +94,6 @@ class Model:
     @ypos.setter
     def ypos(self, ypos):
         prior = self._ypos
-        print("ypos:")
-        print(ypos)
         self._ypos = ypos
         self._notify("ypos", prior=prior, current=ypos)
 
