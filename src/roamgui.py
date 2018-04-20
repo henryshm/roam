@@ -19,20 +19,26 @@ URL_UPDATE = SERVER + "/update"
 def get_vars():
     return requests.get(URL_VARS).json()
 
+
 def get_weights():
     return requests.get(URL_WEIGHTS).json()
+
 
 def get_ypos():
     return requests.get(URL_YPOS).json()
 
+
 def get_filter():
     return requests.get(URL_FILTER).json()
+
 
 def get_data():
     return requests.get(URL_DATA).json()
 
+
 def do_update(new_weights):
     return requests.post(URL_UPDATE, json=new_weights).json()
+
 
 def do_filter(indices):
     return requests.post(URL_FILTER, json=list(indices)).json()
@@ -88,6 +94,8 @@ class Model:
     @ypos.setter
     def ypos(self, ypos):
         prior = self._ypos
+        print("ypos:")
+        print(ypos)
         self._ypos = ypos
         self._notify("ypos", prior=prior, current=ypos)
 
@@ -525,7 +533,7 @@ class VarTable:
                     tag="scale")
                 scales[name] = scale
 
-                do_colorize = lambda var: lambda: self._colorize(var)
+                do_colorize = lambda v: lambda: self._colorize(v)
 
                 colorbtn = tk.Button(c, text="c", command=do_colorize(var))
                 c.create_window(self.NAME_WIDTH+self.HIST_WIDTH+self.SLIDE_WIDTH+self.PAD_WIDTH*3, yc,

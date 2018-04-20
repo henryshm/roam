@@ -234,6 +234,24 @@ def estimate_sne(P, q_fn, grad_fn, params):
     return Y
 
 
+def estimate_pca(P, q_fn, grad_fn, params):
+    """
+    Estimates a PCA data.
+
+    # Arguments
+        P: Matrix of joint probabilities.
+        q_fn: Function that takes Y and gives Q prob matrix.
+        grad_fn: Function to compute gradient cost, given (P, Q, Y, inv_distances)
+    # Returns:
+        Y: Matrix, low-dimensional representation of X.
+    """
+
+    N, M = P.shape
+    assert N == M, "P must be a square matrix"
+    assert isinstance(params, OptParams), "an OptParams instance is required for params"
+
+
+
 def q_tsne(Y):
     """t-SNE: Given low-dimensional representations Y, compute
     matrix of joint probabilities with entries q_ij."""
@@ -307,7 +325,7 @@ def estimate_tsne_prior(
     assert P.shape == (N,N), "P must be square"
     assert Y0.shape == (N,2), "Y0 must have shape (N,2)"
     assert Y0mask.shape == (N,), "Y0mask should be 1-D of length N"
-    n_mask = np.sum(Y0mask)
+
     grad = functools.partial(tsne_grad_prior, Y0=Y0, Y0mask=Y0mask, gamma=gamma)
     y = estimate_sne(
         P,

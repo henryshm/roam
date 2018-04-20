@@ -92,7 +92,7 @@ def get_map(prob, perplexity=10.0, n_iter=1000, learning_rate=50.0):
         learning_rate=learning_rate
     )
     y = tsne.fit_transform(dist_func)
-
+    
     return {k: y[i,:] for i,k in enumerate(keep_idxs)}
 
 
