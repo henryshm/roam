@@ -2,7 +2,6 @@
 # Roam - Copyright 2018 David J. C. Beach; see LICENSE in project root
 
 import sys
-import os
 import json
 from io import BytesIO
 
@@ -30,6 +29,7 @@ class AppState(object):
         self._procdf = procdf
         self._idpos = idpos
         self._filter = np.arange(len(df))
+        self._type = 1
 
         # use setter to normalize weights
         self.weights = weights
@@ -97,10 +97,18 @@ class AppState(object):
                 mappedw[pos] = w[i]
         self._wdata = self._procdf.as_matrix() * mappedw
 
+    @property
+    def type(self):
+        return self._type
+
+    @type.setter
+    def type(self, type):
+        self._type = type
+
     def update(self):
         prior = self._map
         filt = self._filter
-        newmap = MAP.create_map_from_data("data", self._wdata[filt], labels=filt, prior=prior)
+        newmap = MAP.create_map_from_data("data", self._wdata[filt], type=self._type, labels=filt, prior=prior)
         self._map = newmap
 
 
@@ -125,13 +133,10 @@ def get_colinfo_1(df, i, catmax=10):
             cats = list(df[colname].dropna().unique())
             cats.sort()
             colinfo.cats = cats
-            print(f"column: {colname} is categorical with {count} distinct values")
         else:
             colinfo.kind = "id"
-            print(f"column: treating {colname} with {count} > {catmax} as identifier")
     else:
         colinfo.kind = "scale"
-        print(f"column: {colname} is scalar")
         colinfo.mean = df[colname].mean()
         colinfo.sd = df[colname].std(ddof=0)
 
@@ -235,6 +240,14 @@ def update_filter():
     indices = bottle.request.json
     appState.filter = indices
     appState.update()
+    return ypos()
+
+
+@app.post("/type", apply=jsonout)
+def update_filter():
+    appState.type = bottle.request.json
+    appState.update()
+    print("AppState: {}".format(appState.type))
     return ypos()
 
 

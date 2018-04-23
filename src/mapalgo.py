@@ -24,15 +24,13 @@ import matplotlib.pyplot as plt
 
 from sklearn.cluster import KMeans
 
-
 #: Optimization Parameters for gradient descent
 OptParams = namedtuple("OptParams", [
-    "num_iters",        # maximum number of iterations
-    "learning_rate",    # learning rate in gradient descent
-    "momentum",         # momentum in gradient descent
-    "seed",             # random seed to use in initialization (or None)
+    "num_iters",  # maximum number of iterations
+    "learning_rate",  # learning rate in gradient descent
+    "momentum",  # momentum in gradient descent
+    "seed",  # random seed to use in initialization (or None)
 ])
-
 
 DEFAULT_OPT_PARAMS = OptParams(
     num_iters=1000,
@@ -81,7 +79,7 @@ def calc_prob_matrix(distances, sigmas):
     return softmax(distances / two_sig_sq)
 
 
-def binary_search(eval_fn, target, tol=1e-10, max_iter=10000, 
+def binary_search(eval_fn, target, tol=1e-10, max_iter=10000,
                   lower=1e-20, upper=1000.):
     """
     Perform a binary search over input values to eval_fn.
@@ -129,12 +127,12 @@ def find_optimal_sigmas(distances, target_perplexity):
     For each row of distances matrix, find sigma that results
     in target perplexity for that role.
     """
-    sigmas = [] 
+    sigmas = []
     # For each row of the matrix (each point in our dataset)
     for i in range(distances.shape[0]):
         # Make fn that returns perplexity of this row given sigma
         eval_fn = lambda sigma: \
-            perplexity(distances[i:i+1, :], np.array(sigma))
+            perplexity(distances[i:i + 1, :], np.array(sigma))
         # Binary search over sigmas to achieve target perplexity
         correct_sigma = binary_search(eval_fn, target_perplexity)
         # Append the resulting sigma to our output array
@@ -186,9 +184,9 @@ def p_joint(X, target_perplexity):
 def symmetric_sne_grad(P, Q, Y, _):
     """Estimate the gradient of the cost with respect to Y."""
     pq_diff = P - Q  # NxN matrix
-    pq_expanded = np.expand_dims(pq_diff, 2)  #NxNx1
-    y_diffs = np.expand_dims(Y, 1) - np.expand_dims(Y, 0)  #NxNx2
-    grad = 4. * (pq_expanded * y_diffs).sum(1)  #Nx2
+    pq_expanded = np.expand_dims(pq_diff, 2)  # NxNx1
+    y_diffs = np.expand_dims(Y, 1) - np.expand_dims(Y, 0)  # NxNx2
+    grad = 4. * (pq_expanded * y_diffs).sum(1)  # Nx2
     return grad
 
 
@@ -207,7 +205,7 @@ def estimate_sne(P, q_fn, grad_fn, params):
     N, M = P.shape
     assert N == M, "P must be a square matrix"
     assert isinstance(params, OptParams), "an OptParams instance is required for params"
-    
+
     # Initialise our 2D representation
     rng = np.random.RandomState(seed=params.seed)
     Y = rng.normal(0., 0.0001, [N, 2])
@@ -270,7 +268,7 @@ def tsne_grad_prior(P, Q, Y, inv_distances, Y0, Y0mask, gamma=0.01):
     grad = tsne_grad(P, Q, Y, inv_distances)
     N, _ = Y.shape
     y_diffs = Y - Y0
-    y_diffs[~Y0mask,:] = 0.0
+    y_diffs[~Y0mask, :] = 0.0
     y_diffs *= (gamma / N)
     grad += y_diffs
     return grad
@@ -287,7 +285,7 @@ def estimate_tsne(P, params):
         Y: Matrix, low-dimensional representation of X.
     """
     N, _ = P.shape
-    assert P.shape == (N,N), "P must be square"
+    assert P.shape == (N, N), "P must be square"
     y = estimate_sne(
         P,
         q_fn=q_tsne,
@@ -303,11 +301,11 @@ def estimate_tsne_prior(
         Y0mask,
         params,
         gamma=0.01,
-    ):
+):
     """Prior t-SNE model."""
     N, _ = P.shape
-    assert P.shape == (N,N), "P must be square"
-    assert Y0.shape == (N,2), "Y0 must have shape (N,2)"
+    assert P.shape == (N, N), "P must be square"
+    assert Y0.shape == (N, 2), "Y0 must have shape (N,2)"
     assert Y0mask.shape == (N,), "Y0mask should be 1-D of length N"
 
     grad = functools.partial(tsne_grad_prior, Y0=Y0, Y0mask=Y0mask, gamma=gamma)
@@ -351,11 +349,11 @@ Map2D = namedtuple("Map2D", ["name", "labels", "prob", "y", "prior", "params"])
 
 
 def create_map(name, prob,
-        labels=None,
-        prior=None,
-        gamma=0.01,
-        params=DEFAULT_OPT_PARAMS,
-    ):
+               labels=None,
+               prior=None,
+               gamma=0.01,
+               params=DEFAULT_OPT_PARAMS,
+               ):
     """
     Create a map with given name and probability matrix, P.
     An optional "prior" map may be provided.
@@ -375,7 +373,7 @@ def create_map(name, prob,
     # have nonzero probabilities
     keep = np.sum(prob, 1) > 1e-6
     if not np.any(keep):
-        return Map2D(name, np.zeros(0), np.zeros((0,0)), np.zeros((0,2)), prior, params)
+        return Map2D(name, np.zeros(0), np.zeros((0, 0)), np.zeros((0, 2)), prior, params)
     if not np.all(keep):
         labels = labels[keep]
         prob = prob[np.ix_(keep, keep)]
@@ -384,13 +382,13 @@ def create_map(name, prob,
     if prior is None:
         y = estimate_tsne(prob, params=params)
     else:
-        y0data = np.zeros((N,2))
+        y0data = np.zeros((N, 2))
         y0mask = np.zeros(N, dtype=bool)
         lab2idx = {l: i for i, l in enumerate(labels)}
         for j, l in enumerate(prior.labels):
             i = lab2idx.get(l)
             if i is not None:
-                y0data[i,:] = prior.y[j,:]
+                y0data[i, :] = prior.y[j, :]
                 y0mask[i] = True
 
         y = estimate_tsne_prior(
@@ -410,7 +408,7 @@ def translate_labels(src, dest):
     where remap is a permutation/selection of labels in src,
     and mask is a boolean mask of labels in dest.
     """
-    labmap = {l:i for i, l in enumerate(src)}
+    labmap = {l: i for i, l in enumerate(src)}
     remap = []
     for l in dest:
         idx = labmap.get(l)
@@ -422,12 +420,13 @@ def translate_labels(src, dest):
 
 
 def create_map_from_data(name, data,
-        labels=None,
-        perplexity=20.0,
-        prior=None,
-        gamma=0.01,
-        params=DEFAULT_OPT_PARAMS,
-    ):
+                         type=1,
+                         labels=None,
+                         perplexity=20.0,
+                         prior=None,
+                         gamma=0.01,
+                         params=DEFAULT_OPT_PARAMS,
+                         ):
     """
     Creates a t-SNE map from a data matrix with the desired perplexity.
     """
@@ -435,29 +434,27 @@ def create_map_from_data(name, data,
         labels = np.arange(len(data))
     prob = p_joint(data, target_perplexity=perplexity)
 
-    #t-SNE version
-    # return create_map(name, prob,
-    #     labels=labels,
-    #     prior=prior,
-    #     gamma=gamma,
-    #     params=params,
-    # )
-
-    #PCA code
-    print("N = {}".format(len(data)))
-    pca = decomposition.PCA(n_components=26)
-    pca.fit(data)
-    y = pca.transform(data)
-    print(y)
-
-    return Map2D(name, labels, prob, y[:, 1:3], prior, params)
+    # PCA or t-SNE based on type
+    if type == 1:
+        # PCA code
+        pca = decomposition.PCA(n_components=26)
+        pca.fit(data)
+        y = pca.transform(data)
+        return Map2D(name, labels, prob, y[:, 1:3], prior, params)
+    else:
+        # t-SNE version
+        return create_map(name, prob,
+                          labels=labels,
+                          prior=prior,
+                          gamma=gamma,
+                          params=params)
 
 
 def create_blended_map(
-        name, maps, weights, preserve=0, prior=0, 
+        name, maps, weights, preserve=0, prior=0,
         gamma=0.01,
         params=DEFAULT_OPT_PARAMS,
-    ):
+):
     """
     Create a blended map by combining two or more other maps.
 
@@ -490,7 +487,7 @@ def create_blended_map(
 
     # compute the blended probability matrix
     N = len(all_labels)
-    Pmix = np.zeros((N,N))
+    Pmix = np.zeros((N, N))
     for i, m in enumerate(maps):
         # index translation selects corresponding position in all_labels
         # for each label in map
@@ -504,10 +501,10 @@ def create_blended_map(
         prior = maps[prior]
 
     return create_map(name, Pmix,
-        prior=prior,
-        gamma=gamma,
-        params=params,
-    )
+                      prior=prior,
+                      gamma=gamma,
+                      params=params,
+                      )
 
 
 def weights_to_condprob(weights):
@@ -531,16 +528,16 @@ def weights_to_condprob(weights):
     wtot = np.sum(weights)
 
     if wtot < 1e-6:
-        return np.zeros((N,N))
+        return np.zeros((N, N))
 
     # avoid divide-by-zero for nodes that have no weight
-    zeroidx = ((wsum/wtot) < 1e-6)
+    zeroidx = ((wsum / wtot) < 1e-6)
     wsum[zeroidx] = 1.0
 
     # compute conditional probabilities
     condprob = (weights / wsum.reshape([-1, 1]))
 
-    condprob[:,zeroidx] = 0.0
+    condprob[:, zeroidx] = 0.0
 
     return condprob
 
@@ -561,7 +558,7 @@ def propagate_with_decay(P, n=3, gamma=0.1):
     """
 
     N = P.shape[0]
-    assert P.shape == (N,N), "P must be a square matrix of conditional probabilities"
+    assert P.shape == (N, N), "P must be a square matrix of conditional probabilities"
     assert 0 <= n, "n should be a nonnegative integer"
     assert 0.0 <= gamma <= 1, "gamma should be in the range [0,1]"
 
@@ -573,7 +570,7 @@ def propagate_with_decay(P, n=3, gamma=0.1):
     numer = Pgamma.copy()
     denom = gamma
 
-    for i in range(2, n+1):
+    for i in range(2, n + 1):
         A = np.dot(A, Pgamma)
         numer += A
         denom += pow(gamma, i)
@@ -589,8 +586,8 @@ def zscore(X):
     Columns with a near-zero standard deviation are mean-centered only.
     """
     N, D = X.shape
-    means = np.tile(np.mean(X, 0), (N,1))
-    stds = np.tile(np.std(X, 0), (N,1))
+    means = np.tile(np.mean(X, 0), (N, 1))
+    stds = np.tile(np.std(X, 0), (N, 1))
     stds[stds < 1e-12] = 1.0
     Z = (X - means) / stds
     return Z
@@ -614,8 +611,8 @@ def map_mean_sse(map1, map2):
     N, _ = y1.shape
 
     delta_y = y2 - y1
-    terms = delta_y[:,0]**2
-    terms += delta_y[:,1]**2
+    terms = delta_y[:, 0] ** 2
+    terms += delta_y[:, 1] ** 2
     sse = np.sum(terms)
     mean_sse = sse / N
 
@@ -677,7 +674,7 @@ def show_map_matrix(
         score=True,
         colormap=_CATEGORY_COLORS,
         unmatched_color="#C0C0C0"
-    ):
+):
     """
     Create a matrix of scatterplots (but technically not a SPLOM),
     where each column corresponds to a given map, but each row uses kmeans class
@@ -712,8 +709,8 @@ def show_map_matrix(
 
     nmaps = len(maps)
     nkeys = len(keys)
-    
-    fig, ax = plt.subplots(nkeys, nmaps, figsize=(nmaps*size,nkeys*size), squeeze=False)
+
+    fig, ax = plt.subplots(nkeys, nmaps, figsize=(nmaps * size, nkeys * size), squeeze=False)
     fig.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95, hspace=0.1, wspace=0.1)
 
     assign = [
@@ -721,10 +718,10 @@ def show_map_matrix(
         for m in keys
     ]
     # stabilize the assigned labels
-    for i in range(1,nkeys):
+    for i in range(1, nkeys):
         # create mapping from prev labels to current labels
-        remap, mask = translate_labels(keys[i-1].labels, keys[i].labels)
-        assignmap = stabilize_assignments(assign[i][mask], assign[i-1][remap])
+        remap, mask = translate_labels(keys[i - 1].labels, keys[i].labels)
+        assignmap = stabilize_assignments(assign[i][mask], assign[i - 1][remap])
         assign[i] = assignmap[assign[i]]
 
     for row in range(nkeys):
@@ -732,14 +729,14 @@ def show_map_matrix(
         rowids = keys[row].labels
         cmap = {rowids[i]: getcolor(rowlabel) for i, rowlabel in enumerate(rowlabels)}
         for col in range(nmaps):
-            plot = ax[row,col]
+            plot = ax[row, col]
             data = maps[col].y
             colors = [cmap.get(id, unmatched_color) for id in maps[col].labels]
             title = maps[col].name
             if score:
                 s = map_mean_sse(keys[row], maps[col])
                 title += " - %5.2f" % s
-            plot.scatter(data[:,0], data[:,1], alpha=alpha, color=colors)
+            plot.scatter(data[:, 0], data[:, 1], alpha=alpha, color=colors)
             plot.set_title(title)
             plot.axis("equal")
             for axis in [plot.xaxis, plot.yaxis]:
@@ -748,5 +745,3 @@ def show_map_matrix(
             for feat in ["left", "top", "right", "bottom"]:
                 plot.spines[feat].set_color("gray")
                 plot.spines[feat].set_linewidth(framewidth)
-
-

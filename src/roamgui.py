@@ -14,6 +14,7 @@ URL_YPOS = SERVER + "/ypos"
 URL_FILTER = SERVER + "/filter"
 URL_DATA = SERVER + "/data"
 URL_UPDATE = SERVER + "/update"
+URL_TYPE = SERVER + "/type"
 
 
 def get_vars():
@@ -44,6 +45,10 @@ def do_filter(indices):
     return requests.post(URL_FILTER, json=list(indices)).json()
 
 
+def do_type_swap(next_type):
+    return requests.post(URL_TYPE, json=next_type).json()
+
+
 class Model:
 
     def __init__(self):
@@ -56,6 +61,7 @@ class Model:
         self._highlight = None
         self._filter = set()
         self._colors = []
+        self._type = 1
 
     @property
     def vars(self):
@@ -90,6 +96,16 @@ class Model:
     @property
     def ypos(self):
         return self._ypos
+
+    @property
+    def type(self):
+        return self._type
+
+    @type.setter
+    def type(self, type):
+        prior = self.type
+        self._type = type
+        self._notify("type", prior=prior, current=type)
 
     @ypos.setter
     def ypos(self, ypos):
@@ -250,6 +266,7 @@ class MapView:
         self._pointsize = pointsize
 
         c = self._canvas
+        c.bind()
         c.bind("<Button-1>", self._startselect)
         c.bind("<B1-Motion>", self._moveselect)
         c.bind("<ButtonRelease-1>", self._endselect)
@@ -754,6 +771,18 @@ def main():
 
     buttonframe = tk.Frame(root)
 
+    radio_val = tk.IntVar()
+    radio1 = tk.Radiobutton(buttonframe,
+                   text="PCA",
+                   variable=radio_val,
+                   value=1)
+    radio2 = tk.Radiobutton(buttonframe,
+                   text="t-SNE",
+                   variable=radio_val,
+                   value=2)
+    # set default selection
+    radio_val.set(1)
+
     filterbtn = tk.Button(buttonframe, text="Apply Filter")
     clearfiltbtn = tk.Button(buttonframe, text="Clear Filter")
     clearselbtn = tk.Button(buttonframe, text="Clear Selection")
@@ -762,6 +791,8 @@ def main():
     updatebtn = tk.Button(buttonframe2, text="Update")
     clearcolorbtn = tk.Button(buttonframe2, text="Reset Colors")
 
+    radio1.pack(side=tk.LEFT)
+    radio2.pack(side=tk.LEFT)
     filterbtn.pack(side=tk.LEFT)
     clearfiltbtn.pack(side=tk.LEFT)
     clearselbtn.pack(side=tk.LEFT)
@@ -779,6 +810,14 @@ def main():
     model.ypos = get_ypos()
     model.filter = get_filter()
     model.data = get_data()
+
+    def switch_type():
+        model.type = radio_val.get()
+        model.ypos = do_type_swap(model.type)
+        print(model.type)
+
+    radio1.config(command=switch_type)
+    radio2.config(command=switch_type)
 
     def filter():
         indices = model.selection
