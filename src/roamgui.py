@@ -764,7 +764,10 @@ def main():
     root.winfo_toplevel().title("Roam GUI")
 
     plotframe = tk.LabelFrame(root, text="Plot Area")
-    plot = MapView(plotframe, model, size=800)
+    plot = MapView(plotframe, model, size=450)
+    
+    plotframe2 = tk.LabelFrame(root, text="Plot Area")
+    plot2 = MapView(plotframe2, model, size=450)
 
     varframe = tk.LabelFrame(root, text="Variables")
     vartable = VarTable(varframe, model)
@@ -801,7 +804,8 @@ def main():
     clearcolorbtn.pack(side=tk.LEFT)
 
     plotframe.grid(row=1, column=0)
-    varframe.grid(row=1, column=1)
+    plotframe2.grid(row=1, column=1)
+    varframe.grid(row=1, column=2)
     buttonframe.grid(row=0, column=0)
     buttonframe2.grid(row=0, column=1)
 
